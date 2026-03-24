@@ -19,7 +19,7 @@ pokulabs/skills
 Install using the [`npx skills`](https://skills.sh) CLI:
 
 ```bash
-npx skills add https://github.com/pokulabs/skills
+npx skills add pokulabs/skills
 ```
 
 ### Clone / Copy
