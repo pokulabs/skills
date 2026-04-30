@@ -1,37 +1,105 @@
 ---
 name: poku
-description: "Places outbound phone calls, sends outbound SMS texts, and reserves dedicated phone numbers on the user's behalf using the Poku API. Use when the user wants to call or text a restaurant, a contact, a business, doctor's office, or any phone number. Also use when the user wants to reserve a dedicated phone number for their agent."
+description: "Sends and receives phone calls and messages (like SMS, WhatsApp, Slack), and reserves dedicated phone numbers using the Poku API. Example use cases: calling a restaurant for a reservation, having a text conversation with a friend to arrange a meeting, accepting calls on a business number during off hours. Use this skill any time the user wants to do actions like call or message someone, or reserve a phone number, even if they never mention 'Poku'."
+metadata: { "openclaw": { "homepage": "https://pokulabs.com", "requires": { "env": ["POKU_API_KEY"] }, "primaryEnv": "POKU_API_KEY" }, "api_base": "https://api.pokulabs.com" }
 ---
 
-# Poku — Outbound Calls, SMS & Number Reservation
+# Poku — Calls, Messages & Numbers
 
 ## Variables
 
-- `POKU_API_KEY` *(required)* — Poku API key. If not set, inform the user to configure it before proceeding.
-- `POKU_TRANSFER_NUMBER` *(optional)* — A phone number in E.164 format to transfer calls to if the agent cannot answer a question. If not set, ask the user if they have a transfer number they'd like to use; if they don't, skip it.
+- `POKU_API_KEY` *(required)* — Poku API key. If not set, see **Troubleshooting** below.
+- `POKU_TRANSFER_NUMBER` *(optional)* — E.164 number to transfer calls to if the counterparty asks to speak with a human.
 
-## How to Execute API Calls
+Never display any full command with a resolved API key in user-facing output. Mask the key if showing commands for debugging: `Bearer ***`.
 
-Use an http client such as curl in a shell environment, or fetch in a browser environment. Example:
 
-```bash
-curl -s -X POST \
-  -H "Authorization: Bearer $POKU_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"key": "value"}' \
-  https://api.pokulabs.com/...
-```
+## Skill Overview
 
-Never display the full curl command with a resolved API key in user-facing output. Mask the key if showing commands for debugging: `Bearer ***`.
+Here's what you can do with Poku:
+
+**Reserve a dedicated number** — Claim a phone number to send/receive calls and messages with.
+
+**Make calls** — Call on your behalf, speak naturally, handle responses, and report back what happened. Calls use a female English voice by default; just ask if you'd like a male voice or different language.
+
+**Send messages** — Send SMS messages from your dedicated number.
+
+**Send WhatsApp messages** — Reach contacts on WhatsApp through a shared Poku WhatsApp number.
+
+To receive inbound calls or texts, a webhook is required. 
 
 ---
 
-## Identify Which Flow to Use
+## Phone Number Format
 
-| The user wants to... | Read this file |
+Always use **E.164 format**: `+` then country code then number.
+
+- `+12223334444` ✓
+- `(222) 333-4444` ✗
+- `222-333-4444` ✗
+- `2223334444` ✗
+
+If a human gives you a US number without a country code, confirm with them that it should be US `+1`. If not, ask the user which country and country code this number is for.
+
+---
+
+## Outbound Call or Message 
+
+If call, use `reference/CALLS.md`  
+If message, use `reference/MESSAGES.md`
+
+Always go through each step before placing a call, NEVER skip any steps.
+
+---
+
+## Troubleshooting
+
+### OpenClaw: POKU_API_KEY not found
+
+If the API key is missing, tell the user:
+
+> "Your Poku API key isn't configured. Open `~/.openclaw/openclaw.json` and add the following block, then run `openclaw gateway restart`:"
+
+```json
+{
+  "skills": {
+    "entries": {
+      "poku": {
+        "enabled": true,
+        "apiKey": "<your-poku-api-key>",
+        "env": {
+          "POKU_TRANSFER_NUMBER": "<your-transfer-number>"
+        }
+      }
+    }
+  }
+}
+```
+
+Get your API key from [dashboard.pokulabs.com](https://dashboard.pokulabs.com).
+
+After restarting, verify the skill loaded:
+```bash
+openclaw skills list --eligible
+# poku should appear in the list
+```
+
+---
+
+## Reference Files
+
+| File | When to read |
 |---|---|
-| Call someone | `references/CALL.md` |
-| Text someone | `references/SMS.md` |
-| Reserve a phone number | `references/NUMBER.md` |
+| `references/CALLS.md` | When making an outbound call |
+| `references/CALL-TEMPLATES.md` | When drafting a call prompt (Step 3) |
+| `references/MESSAGES.md` | When sending a message (like SMS, WhatsApp, Slack, etc) |
+| `references/MESSAGE-TEMPLATES.md` | When drafting a message prompt |
+| `references/NUMBERS.md` | When reserving or managing phone numbers |
+| `references/WEBHOOKS.md` | When setting up inbound calls/texts or advanced config |
+| `references/API.md` | When you need full endpoint parameters |
 
-Read only the file(s) that match the user's request. For error codes and API parameters, see `references/API.md`.
+## Learn More
+
+- **Full API reference for LLMs:** [docs.pokulabs.com/llms.txt](https://docs.pokulabs.com/llms.txt)
+- **Interactive docs:** [docs.pokulabs.com](https://docs.pokulabs.com)
+- **Issues, feedback, feature requests:** email `hello@pokulabs.com`

@@ -1,171 +1,149 @@
 # Poku API Reference
 
-## Endpoints
+## Contents
 
-| Action | Method | URL |
-|---|---|---|
-| Place a call | `POST` | `https://api.pokulabs.com/phone/call` |
-| Send an SMS | `POST` | `https://api.pokulabs.com/phone/sms` |
-| List available numbers | `GET` | `https://api.pokulabs.com/reserved-numbers/available` |
-| Reserve a number | `POST` | `https://api.pokulabs.com/reserved-numbers/reserve` |
+- [Calls](#calls) — Place outbound call, get call result
+- [Messages](#messages) — SMS, WhatsApp, Slack, saved channels
+- [Numbers](#numbers) — List available, list reserved, reserve, release
+- [Webhooks](#webhooks) — List, create, update, delete
 
-## Authentication
+Base URL: `https://api.pokulabs.com`
 
-All requests require a Bearer token in the `Authorization` header:
-
+All requests use Bearer auth:
 ```
 Authorization: Bearer $POKU_API_KEY
 ```
 
-If `POKU_API_KEY` is not set, inform the user to configure it before proceeding.
-
 ---
 
-## POST /phone/call
+## Calls
 
-### Request Parameters
+### POST /calls — Place an outbound call
 
-| Parameter | Type | Required | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `message` | string | Yes | Context on the goal and task for the voice agent to accomplish. See `references/CALL.md` for templates. |
-| `to` | string | Yes | Destination phone number in E.164 format (e.g. `+15551234567`). |
-| `transferNumber` | string | No | Phone number to transfer the call to if the agent cannot answer a question. Must be valid E.164 format. Validate before placing the call. |
+| `prompt` | string | Yes | Instructions for the call: goal, context, branching behavior, voicemail script. |
+| `to` | string | Yes | Recipient number in E.164 format. |
+| `from` | string | No | Caller ID. Defaults to your reserved number, or a shared Poku number. |
+| `transferTo` | string | No | E.164 number to transfer the call to if the recipient asks for a human. |
+| `language` | string | No | Language e.g. `en-US`, `de-DE`. Defaults to `en-US`. Note: accents/dialects not supported |
+| `voice` | `"male"` \| `"female"` | No | Voice for the call. Defaults to `"female"`. |
+| `waitForCallEnd` | boolean | No | `true` = block until call ends (Mode A). `false` = return immediately with `interactionId` (Mode B). Default `false` |
+| `yieldMs` | number | No | Mode A: set to `300000`. Mode B: set to `1000`. |
 
-### Example Requests
-
-```bash
-# Without transfer number
-jq -n --arg msg "<goal and context summary for voice agent>" --arg to "+15551234567" \
-  '{"message": $msg, "to": $to}' | \
-curl -s -X POST \
-  -H "Authorization: Bearer $POKU_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d @- \
-  https://api.pokulabs.com/phone/call
-
-# With transfer number
-jq -n --arg msg "<goal and context summary for voice agent>" --arg to "+15551234567" --arg transfer "$POKU_TRANSFER_NUMBER" \
-  '{"message": $msg, "to": $to, "transferNumber": $transfer}' | \
-curl -s -X POST \
-  -H "Authorization: Bearer $POKU_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d @- \
-  https://api.pokulabs.com/phone/call
-```
-
-### Error Responses
-
-| Error string | Meaning | What to do |
-|---|---|---|
-| `"human did not respond"` | Call connected but no one answered or engaged | Report to user and stop |
-| `"invalid to number"` | `to` field is malformed or unroutable | Report to user; re-check E.164 formatting |
-| `"timeout"` | Call exceeded 5-minute limit | Report to user; do not retry automatically |
-
----
-
-## POST /phone/sms
-
-### Request Parameters
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `message` | string | Yes | The text message body to send. |
-| `to` | string | Yes | Destination phone number in E.164 format (e.g. `+15551234567`). |
-
-### Example Request
-
-Run using `bash_tool`:
-
-```bash
-jq -n --arg msg "<message body>" --arg to "+15551234567" \
-  '{"message": $msg, "to": $to}' | \
-curl -s -X POST \
-  -H "Authorization: Bearer $POKU_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d @- \
-  https://api.pokulabs.com/phone/sms
-```
-
-### Error Responses
-
-| Error string | Meaning | What to do |
-|---|---|---|
-| `"invalid to number"` | `to` field is malformed or unroutable | Report to user; re-check E.164 formatting |
-
----
-
-## GET /reserved-numbers/available
-
-Lists phone numbers available to reserve.
-
-### Query Parameters
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `country` | string | No | Filter by country. Accepted values: `"US"`, `"GB"`. Omit to search all. |
-| `areaCode` | number | No | Filter by area code (e.g. `415`). US only. |
-| `limit` | number | No | Maximum results to return. Use `1` for auto-select, `10` for browse. |
-
-### Example Request
-
-```bash
-curl -s -G \
-  -H "Authorization: Bearer $POKU_API_KEY" \
-  --data-urlencode "country=US" \
-  --data-urlencode "areaCode=916" \
-  --data-urlencode "limit=10" \
-  https://api.pokulabs.com/reserved-numbers/available
-```
-
-### Response
-
-Returns an array of available phone number objects. `locality` may be `null` for some numbers.
-
+**Response (Mode A):**
 ```json
-[
-  {
-    "phoneNumber": "+18142307424",
-    "locality": "Warren",
-    "region": "PA",
-    "country": "US"
+{
+  "response": "ABC restaurant confirmed your reservation for 2 people at 6pm tomorrow.",
+  "call": {
+    "recordingUrl": "https://cdn.example.com/recordings/abc123.wav"
   },
-  {
-    "phoneNumber": "+18392266992",
-    "locality": null,
-    "region": "US",
-    "country": "US"
-  }
-]
+  "interactionId": "f3f7870f-30f5-4bf2-83b0-a05bc140030c"
+}
 ```
 
-When displaying options to the user, show `phoneNumber` and include `locality` and `region` where available (e.g. "Warren, PA"). Use only `phoneNumber` when passing to the reserve endpoint.
+`call.recordingUrl` may be omitted when no recording is available.
 
-### Error Responses
+**Response (Mode B):**
+```json
+{
+  "interactionId": "f3f7870f-30f5-4bf2-83b0-a05bc140030c"
+}
+```
 
-| Error string | Meaning | What to do |
-|---|---|---|
-| `"invalid country"` | `country` value is not `"US"` or `"GB"` | Report to user; correct the value |
+### GET /interactions/:interactionId/status — Get call result
+
+Use with Mode B to poll for the outcome after placing a non-blocking call.
+
+```bash
+curl -s https://api.pokulabs.com/interactions/<interactionId>/status \
+  -H "Authorization: Bearer $POKU_API_KEY"
+```
 
 ---
 
-## POST /reserved-numbers/reserve
+## Messages
 
-Reserves a specific phone number for the user's account. This is a one-time, non-reversible action.
+### POST /messages/sms
 
-### Request Parameters
-
-| Parameter | Type | Required | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `phoneNumber` | string | Yes | The phone number to reserve, in E.164 format. Must be a number returned by `GET /reserved-numbers/available`. |
+| `message` | string | Yes | Message body. Max 1000 characters. |
+| `to` | string | Yes | Recipient in E.164 format. |
+| `from` | string | No | Sender number in E.164 format. Defaults to your reserved number. |
+| `waitTime` | number | No | Seconds to hold the request open for a reply (1–600). |
+| `followUpTime` | number | No | Seconds for webhook to keep listening (1–60000). |
 
-### Example Request
+### POST /messages/whatsapp
 
-```bash
-jq -n --arg phoneNumber "+15551234567" \
-  '{"phoneNumber": $phoneNumber}' | \
-curl -s -X POST \
-  -H "Authorization: Bearer $POKU_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d @- \
-  https://api.pokulabs.com/reserved-numbers/reserve
-```
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `message` | string | Yes | Message body. Max 1000 characters. |
+| `to` | string | Yes | Recipient in E.164 format. |
+| `waitTime` | number | No | Seconds to hold the request open for a reply (1–600). |
+| `followUpTime` | number | No | Seconds for webhook to keep listening (1–60000). |
+
+### POST /messages/slack
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `message` | string | Yes | Slack message body. |
+| `to` | string | Yes | Slack user, member, or channel ID. |
+| `from` | string | No | Slack workspace ID. Omit to send from the Poku Slack workspace. |
+| `waitTime` | number | No | Seconds to wait for a threaded reply. |
+| `followUpTime` | number | No | Seconds to continue listening after `waitTime`. |
+
+---
+
+## Numbers
+
+### GET /numbers/available
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `country` | `"US"` \| `"GB"` | No | Country to search. Defaults to `"US"`. |
+| `areaCode` | number | No | Three-digit US area code. US only. |
+
+**Response:** Array of `{ phoneNumber, locality, region, country }` objects.
+
+### GET /numbers
+
+Lists your currently reserved numbers. Each includes `id`, `phoneNumber`, `createdAt`, `updatedAt`.
+
+### POST /numbers/reserve
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `phoneNumber` | string | Yes | E.164 number from `GET /numbers/available`. |
+
+**Response:** `{ id, phoneNumber, createdAt, updatedAt }`
+
+### DELETE /numbers/:id
+
+Releases a reserved number. Irreversible — confirm with the user before calling. Returns `{ id, number }`.
+
+---
+
+## Webhooks
+
+### GET /webhooks
+
+Lists all registered webhooks.
+
+### POST /webhooks
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `url` | string | Yes | Destination URL. |
+| `eventTypes` | string[] | Yes | Event types to subscribe to. Max 10. |
+| `name` | string | No | Friendly name. |
+| `signingSecret` | string | No | Shared secret for verification. 8–200 characters. |
+| `headers` | object | No | Extra static headers on deliveries. |
+
+### PATCH /webhooks/:id
+
+Updates a webhook. Only fields you send are changed. Updatable: `name`, `url`, `signingSecret`, `headers`, `isActive`, `eventTypes`.
+
+### DELETE /webhooks/:id
+
+Deletes a webhook. Returns `204 No Content`.
