@@ -99,8 +99,7 @@ curl -s -X POST https://api.pokulabs.com/webhooks \
     "name": "Inbound SMS webhook",
     "url": "https://example.com/poku-webhook",
     "signingSecret": "supersecret123",
-    "eventTypes": ["phone.sms.received"],
-    "reservedPhoneNumberIds": ["<reserved-number-id>"]
+    "eventTypes": ["phone.sms.received"]
   }'
 ```
 
@@ -111,7 +110,6 @@ curl -s -X POST https://api.pokulabs.com/webhooks \
 | `name` | No | Friendly label |
 | `signingSecret` | No | 8–200 char shared secret for signature verification |
 | `headers` | No | Extra static headers attached to every delivery |
-| `reservedPhoneNumberIds` | No | Limit deliveries to specific numbers. Max 50. |
 
 ### Update a Webhook
 
@@ -122,7 +120,7 @@ curl -s -X PATCH https://api.pokulabs.com/webhooks/<WEBHOOK_ID> \
   -d '{"isActive": false}'
 ```
 
-Updatable fields: `name`, `url`, `signingSecret`, `headers`, `isActive`, `eventTypes`, `reservedPhoneNumberIds`.
+Updatable fields: `name`, `url`, `signingSecret`, `headers`, `isActive`, `eventTypes`.
 
 ### Delete a Webhook
 

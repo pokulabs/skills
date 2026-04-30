@@ -139,11 +139,10 @@ Lists all registered webhooks.
 | `name` | string | No | Friendly name. |
 | `signingSecret` | string | No | Shared secret for verification. 8–200 characters. |
 | `headers` | object | No | Extra static headers on deliveries. |
-| `reservedPhoneNumberIds` | string[] | No | Limit to specific reserved numbers. Max 50. |
 
 ### PATCH /webhooks/:id
 
-Updates a webhook. Only fields you send are changed. Updatable: `name`, `url`, `signingSecret`, `headers`, `isActive`, `eventTypes`, `reservedPhoneNumberIds`.
+Updates a webhook. Only fields you send are changed. Updatable: `name`, `url`, `signingSecret`, `headers`, `isActive`, `eventTypes`.
 
 ### DELETE /webhooks/:id
 
