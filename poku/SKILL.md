@@ -45,7 +45,7 @@ If a human gives you a US number without a country code, confirm with them that 
 
 ## Outbound Call or Message 
 
-If call, use `reference/CALLS.md`
+If call, use `reference/CALLS.md`  
 If message, use `reference/MESSAGES.md`
 
 Always go through each step before placing a call, NEVER skip any steps.
