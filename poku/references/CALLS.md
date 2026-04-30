@@ -108,36 +108,3 @@ Poku sends a POST to your endpoint when the call completes. Best when you want t
 
 Webhook setup required. Read `references/WEBHOOKS.md` for full setup instructions.
 
----
-
-## Troubleshooting
-
-### OpenClaw: POKU_API_KEY not found
-
-If the API key is missing, tell the user:
-
-> "Your Poku API key isn't configured. Open `~/.openclaw/openclaw.json` and add the following block, then run `openclaw gateway restart`:"
-
-```json
-{
-  "skills": {
-    "entries": {
-      "poku": {
-        "enabled": true,
-        "apiKey": "<your-poku-api-key>",
-        "env": {
-          "POKU_TRANSFER_NUMBER": "<your-transfer-number>"
-        }
-      }
-    }
-  }
-}
-```
-
-Get your API key from [dashboard.pokulabs.com](https://dashboard.pokulabs.com).
-
-After restarting, verify the skill loaded:
-```bash
-openclaw skills list --eligible
-# poku should appear in the list
-```

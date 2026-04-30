@@ -50,6 +50,39 @@ If message, use `reference/MESSAGES.md`
 
 Always go through each step before placing a call, NEVER skip any steps.
 
+---
+
+## Troubleshooting
+
+### OpenClaw: POKU_API_KEY not found
+
+If the API key is missing, tell the user:
+
+> "Your Poku API key isn't configured. Open `~/.openclaw/openclaw.json` and add the following block, then run `openclaw gateway restart`:"
+
+```json
+{
+  "skills": {
+    "entries": {
+      "poku": {
+        "enabled": true,
+        "apiKey": "<your-poku-api-key>",
+        "env": {
+          "POKU_TRANSFER_NUMBER": "<your-transfer-number>"
+        }
+      }
+    }
+  }
+}
+```
+
+Get your API key from [dashboard.pokulabs.com](https://dashboard.pokulabs.com).
+
+After restarting, verify the skill loaded:
+```bash
+openclaw skills list --eligible
+# poku should appear in the list
+```
 
 ---
 
@@ -60,6 +93,7 @@ Always go through each step before placing a call, NEVER skip any steps.
 | `references/CALLS.md` | When making an outbound call |
 | `references/CALL-TEMPLATES.md` | When drafting a call prompt (Step 3) |
 | `references/MESSAGES.md` | When sending a message (like SMS, WhatsApp, Slack, etc) |
+| `references/MESSAGE-TEMPLATES.md` | When drafting a message prompt |
 | `references/NUMBERS.md` | When reserving or managing phone numbers |
 | `references/WEBHOOKS.md` | When setting up inbound calls/texts or advanced config |
 | `references/API.md` | When you need full endpoint parameters |
