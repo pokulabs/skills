@@ -1,6 +1,6 @@
 ---
 name: poku
-description: "Sends and receives phone calls and messages (like SMS, WhatsApp, Slack), and reserves dedicated phone numbers using the Poku API. Example use cases: calling a restaurant for a reservation, having a text conversation with a friend to arrange a meeting, accepting calls on a business number during off hours. Use this skill any time the user wants to do actions like call or message someone, or reserve a phone number, even if they never mention 'Poku'. 
+description: "Sends and receives phone calls and messages (like SMS, WhatsApp, Slack), and reserves dedicated phone numbers using the Poku API. Example use cases: calling a restaurant for a reservation, having a text conversation with a friend to arrange a meeting, accepting calls on a business number during off hours. Use this skill any time the user wants to do actions like call or message someone, or reserve a phone number, even if they never mention 'Poku'."
 metadata: { "openclaw": { "homepage": "https://pokulabs.com", "requires": { "env": ["POKU_API_KEY"] }, "primaryEnv": "POKU_API_KEY" }, "api_base": "https://api.pokulabs.com" }
 ---
 
